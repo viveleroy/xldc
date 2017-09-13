@@ -30,6 +30,12 @@ import (
 	"github.com/viveleroy/goxldeploy"
 )
 
+//typeShort is used in provicing a non verbose display of a type or a typelist
+type typeShort struct {
+	Name        string `json:"type"`
+	Description string `json:"description"`
+}
+
 // verifyCmd represents the verify command
 var metaCmd = &cobra.Command{
 	Use:   "meta",
@@ -43,12 +49,14 @@ var metaTypeCommand = &cobra.Command{
 	Long:  "fetches metadata from xldeploy for a single type",
 	Run:   getTypeMetadata,
 }
+
 var metaOrchestratorCommand = &cobra.Command{
 	Use:   "orchestrators",
 	Short: "Display metadata for orchestrators",
 	Long:  "fetches a list of available orchestrators from xldeploy ",
 	Run:   getOrchestratorMetadata,
 }
+
 var metaPermissionsCommand = &cobra.Command{
 	Use:   "permissions",
 	Short: "Display metadata for Permissions",
@@ -56,10 +64,17 @@ var metaPermissionsCommand = &cobra.Command{
 	Run:   getPermissionMetadata,
 }
 
+var longBool bool
+
 func init() {
+
+	metaTypeCommand.Flags().BoolVarP(&longBool, "long", "l", false, "print long listing instead of condensed output")
 	metaCmd.AddCommand(metaTypeCommand)
+
 	metaCmd.AddCommand(metaOrchestratorCommand)
+
 	metaCmd.AddCommand(metaPermissionsCommand)
+
 	RootCmd.AddCommand(metaCmd)
 
 	// Here you will define your flags and configuration settings.
@@ -77,6 +92,7 @@ func getTypeMetadata(cmd *cobra.Command, args []string) {
 
 	//Lets declare an interface for output
 	var o interface{}
+	// var out interface{}
 	var err error
 
 	cfg := goxldeploy.Config{
@@ -104,8 +120,37 @@ func getTypeMetadata(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	fmt.Println(RenderJSON(o))
+	//if the longBool is false we want the short rundown of the types
+	// so we have to determine if we're dealing with a list or a single type
+	// when dealing with a single type .. get name and description from that
+	// when dealing with a list .. compose an alternate list with type description pairs
+	if longBool == false {
 
+		//Figure out the type we got handed
+		switch o.(type) {
+		case goxldeploy.Type:
+			//o is a interface{} lets assert it to goxldeploy.Type
+			oT := o.(goxldeploy.Type)
+			RenderJSON(typeShort{Name: oT.Type, Description: oT.Description})
+			os.Exit(0)
+		case goxldeploy.TypeList:
+			var localOut []typeShort
+			for _, t := range o.(goxldeploy.TypeList) {
+				ts := typeShort{Name: t.Type, Description: t.Description}
+				// fmt.Printf("%+v\n", t)
+				localOut = append(localOut, ts)
+			}
+			RenderJSON(localOut)
+			os.Exit(0)
+
+		default:
+			fmt.Printf("I don't know, ask stackoverflow.")
+		}
+	} else {
+		RenderJSON(o)
+	}
+
+	// if not just
 }
 
 func getOrchestratorMetadata(cmd *cobra.Command, args []string) {
@@ -127,7 +172,7 @@ func getOrchestratorMetadata(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Println(RenderJSON(o))
+	RenderJSON(o)
 }
 
 func getPermissionMetadata(cmd *cobra.Command, args []string) {
@@ -149,12 +194,12 @@ func getPermissionMetadata(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Println(RenderJSON(o))
+	RenderJSON(o)
 }
 
 //RenderJSON function to render output as json
 // returns a string object with json formated output
-func RenderJSON(l interface{}) string {
+func RenderJSON(l interface{}) {
 
 	b, err := json.MarshalIndent(l, "", " ")
 	if err != nil {
@@ -162,5 +207,5 @@ func RenderJSON(l interface{}) string {
 	}
 	s := string(b)
 
-	return s
+	fmt.Println(s)
 }
