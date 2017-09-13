@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	jww "github.com/spf13/jwalterweatherman"
 	"github.com/spf13/viper"
+	"github.com/viveleroy/goxldeploy"
 )
 
 // vars for app
@@ -44,9 +45,10 @@ var scheme string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "xldc",
-	Short: "XL-Deploy CLI",
-	Long:  `XL-Deploy CLI does some stuff with XL-Deploy`,
+	Use:              "xldc",
+	Short:            "XL-Deploy CLI",
+	Long:             `XL-Deploy CLI does some stuff with XL-Deploy`,
+	PersistentPreRun: preVerifyConnection,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -165,5 +167,25 @@ func processConfig() {
 	}
 	if viper.IsSet("ssl") {
 		ssl = viper.GetBool("ssl")
+	}
+}
+
+// preVerifyConnection will check if the connection can be established
+func preVerifyConnection(cmd *cobra.Command, args []string) {
+	cfg := goxldeploy.Config{
+		User:     username,
+		Password: password,
+		Host:     host,
+		Port:     port,
+		Context:  context,
+		Scheme:   scheme,
+	}
+	xld := goxldeploy.New(&cfg)
+	c := xld.Connected()
+	if c {
+		jww.INFO.Println("Connection to XL-Deploy verified")
+	} else {
+		jww.FATAL.Println("Connection to XL-Deploy failed")
+		os.Exit(1)
 	}
 }
