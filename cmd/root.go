@@ -21,6 +21,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -188,4 +189,33 @@ func preVerifyConnection(cmd *cobra.Command, args []string) {
 		jww.FATAL.Println("Connection to XL-Deploy failed")
 		os.Exit(1)
 	}
+}
+
+//RenderJSON function to render output as json
+// returns a string object with json formated output
+func RenderJSON(l interface{}) {
+
+	b, err := json.MarshalIndent(l, "", " ")
+	if err != nil {
+		panic(err)
+	}
+	s := string(b)
+
+	fmt.Println(s)
+}
+
+//GetClient returns a configured XLD client object
+func GetClient() *goxldeploy.Client {
+
+	cfg := goxldeploy.Config{
+		User:     username,
+		Password: password,
+		Host:     host,
+		Port:     port,
+		Context:  context,
+		Scheme:   scheme,
+	}
+
+	return goxldeploy.New(&cfg)
+
 }

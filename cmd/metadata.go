@@ -38,7 +38,7 @@ type typeShort struct {
 
 // verifyCmd represents the verify command
 var metaCmd = &cobra.Command{
-	Use:   "meta",
+	Use:   "metadata",
 	Short: "meta displays metadata",
 	Long:  `retrieves and displays metadata form xldeploy`,
 }
@@ -67,8 +67,10 @@ var metaPermissionsCommand = &cobra.Command{
 var longBool bool
 
 func init() {
-
+	// add flags to the various previously defined commands
 	metaTypeCommand.Flags().BoolVarP(&longBool, "long", "l", false, "print long listing instead of condensed output")
+
+	// add the commands to da mothership
 	metaCmd.AddCommand(metaTypeCommand)
 
 	metaCmd.AddCommand(metaOrchestratorCommand)
@@ -77,15 +79,6 @@ func init() {
 
 	RootCmd.AddCommand(metaCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// verifyCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// verifyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func getTypeMetadata(cmd *cobra.Command, args []string) {
@@ -95,16 +88,7 @@ func getTypeMetadata(cmd *cobra.Command, args []string) {
 	// var out interface{}
 	var err error
 
-	cfg := goxldeploy.Config{
-		User:     username,
-		Password: password,
-		Host:     host,
-		Port:     port,
-		Context:  context,
-		Scheme:   scheme,
-	}
-
-	xld := goxldeploy.New(&cfg)
+	xld := GetClient()
 
 	if len(args) == 0 {
 		o, err = xld.Metadata.GetTypeList()
@@ -155,16 +139,7 @@ func getTypeMetadata(cmd *cobra.Command, args []string) {
 
 func getOrchestratorMetadata(cmd *cobra.Command, args []string) {
 
-	cfg := goxldeploy.Config{
-		User:     username,
-		Password: password,
-		Host:     host,
-		Port:     port,
-		Context:  context,
-		Scheme:   scheme,
-	}
-
-	xld := goxldeploy.New(&cfg)
+	xld := GetClient()
 
 	o, err := xld.Metadata.GetOrchestrators()
 	if err != nil {
@@ -177,16 +152,7 @@ func getOrchestratorMetadata(cmd *cobra.Command, args []string) {
 
 func getPermissionMetadata(cmd *cobra.Command, args []string) {
 
-	cfg := goxldeploy.Config{
-		User:     username,
-		Password: password,
-		Host:     host,
-		Port:     port,
-		Context:  context,
-		Scheme:   scheme,
-	}
-
-	xld := goxldeploy.New(&cfg)
+	xld := GetClient()
 
 	o, err := xld.Metadata.GetPermissions()
 	if err != nil {
@@ -197,15 +163,3 @@ func getPermissionMetadata(cmd *cobra.Command, args []string) {
 	RenderJSON(o)
 }
 
-//RenderJSON function to render output as json
-// returns a string object with json formated output
-func RenderJSON(l interface{}) {
-
-	b, err := json.MarshalIndent(l, "", " ")
-	if err != nil {
-		panic(err)
-	}
-	s := string(b)
-
-	fmt.Println(s)
-}
