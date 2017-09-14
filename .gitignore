@@ -4,6 +4,7 @@
 *.so
 *.dylib
 
+
 # Test binary, build with `go test -c`
 *.test
 
@@ -15,3 +16,6 @@
 
 # Default config for xldc
 xldc.yaml
+
+#compiled binary
+xldc
