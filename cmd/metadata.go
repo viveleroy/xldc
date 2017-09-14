@@ -21,7 +21,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
