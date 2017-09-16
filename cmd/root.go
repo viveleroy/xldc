@@ -23,6 +23,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -218,4 +219,27 @@ func GetClient() *goxldeploy.Client {
 
 	return goxldeploy.New(&cfg)
 
+}
+
+//WriteToFile writes any string output to file
+func WriteJSONToFile(l interface{}, f string) error {
+
+	var err error
+
+	b, err := json.MarshalIndent(l, "", " ")
+	if err != nil {
+		return err
+	}
+
+	s := string(b)
+
+	d1 := []byte(s + "\n")
+
+	err = ioutil.WriteFile(f, d1, 0644)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
