@@ -30,7 +30,6 @@ import (
 	jww "github.com/spf13/jwalterweatherman"
 )
 
-var outputFile string
 var id string
 var ciType string
 
@@ -39,6 +38,12 @@ var repositoryCmd = &cobra.Command{
 	Use:   "repository",
 	Short: "handle repository operations",
 	Long:  `do inserts deletions, updated and deletions from and to the the xldeploy repository database`,
+}
+
+var repositoryUpdateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "update an already existing ci in the repository",
+	Run:   UpdateCI,
 }
 
 var repositoryGetCmd = &cobra.Command{
@@ -56,9 +61,13 @@ var repositoryCreateCmd = &cobra.Command{
 
 func init() {
 	// add flags to the various previously defined commands
-	repositoryGetCmd.Flags().StringVarP(&outputFile, "out", "o", "", "specify an output file")
+	repositoryGetCmd.Flags().StringVarP(&outputFile, "out", "", "", "specify an output file")
+	repositoryGetCmd.Flags().StringVarP(&inputFile, "in", "", "", "specify an input file containing")
+
 	repositoryCmd.AddCommand(repositoryGetCmd)
 
+	repositoryUpdateCmd.Flags().BoolVarP(&merge, "merge", "m", false, "merge the update with the existing ci")
+	repositoryCmd.AddCommand(repositoryUpdateCmd)
 	// add the commands to da mothership
 
 	repositoryCreateCmd.Flags().StringVarP(&id, "id", "i", "", "specify ci id")
@@ -85,11 +94,7 @@ func GetCI(cmd *cobra.Command, args []string) {
 	}
 
 	if outputFile != "" {
-		err := WriteJSONToFile(ci, outputFile)
-		if err != nil {
-			jww.FATAL.Printf("%s: unable to write output to file: %s,  %s", cmd.CommandPath(), outputFile, err)
-			os.Exit(1)
-		}
+		WriteJSONToFile(ci, outputFile)
 		os.Exit(0)
 	}
 
@@ -116,6 +121,26 @@ func CreateCI(cmd *cobra.Command, args []string) {
 
 	RenderJSON(ci)
 
+}
+
+func UpdateCI(cmd *cobra.Command, args []string) {
+	var ci goxldeploy.Ci
+
+	xld := GetClient()
+
+	if len(args) != 0 {
+		ci = goxldeploy.NewCI(id, ciType, splitPropertiesString(args[0]))
+	}
+
+	ci = goxldeploy.NewCI(id, ciType, nil)
+
+	ci, err := xld.Repository.CreateCI(ci)
+	if err != nil {
+		jww.FATAL.Printf("%s: encounterd a fatal error creating configuration Item %s: %s", cmd.CommandPath(), id, err)
+		os.Exit(1)
+	}
+
+	RenderJSON(ci)
 }
 
 func splitPropertiesString(s string) map[string]interface{} {

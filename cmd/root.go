@@ -44,6 +44,7 @@ var port int
 var context string
 var ssl bool
 var scheme string
+var outputFile string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -79,6 +80,7 @@ func init() {
 	RootCmd.PersistentFlags().IntVar(&port, "port", 0, "Port where Xl-Deploy is running")
 	RootCmd.PersistentFlags().StringVar(&context, "context", "", "Context-root where XL-Deploy is running")
 	RootCmd.PersistentFlags().BoolVar(&ssl, "ssl", false, "Use SSL")
+	RootCmd.PersistentFlags().StringVarP(&outputFile, "out", "", "", "specify an output file")
 	viper.BindPFlag("username", RootCmd.PersistentFlags().Lookup("username"))
 	viper.BindPFlag("password", RootCmd.PersistentFlags().Lookup("password"))
 	viper.BindPFlag("host", RootCmd.PersistentFlags().Lookup("host"))
@@ -222,13 +224,13 @@ func GetClient() *goxldeploy.Client {
 }
 
 //WriteToFile writes any string output to file
-func WriteJSONToFile(l interface{}, f string) error {
+func WriteJSONToFile(l interface{}, f string) {
 
 	var err error
 
 	b, err := json.MarshalIndent(l, "", " ")
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	s := string(b)
@@ -238,8 +240,6 @@ func WriteJSONToFile(l interface{}, f string) error {
 	err = ioutil.WriteFile(f, d1, 0644)
 
 	if err != nil {
-		return err
+		panic(err)
 	}
-
-	return nil
 }

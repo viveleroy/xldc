@@ -48,6 +48,12 @@ var metaTypeCommand = &cobra.Command{
 	Long:  "fetches metadata from xldeploy for a single type",
 	Run:   getTypeMetadata,
 }
+var metaTemplateCommand = &cobra.Command{
+	Use:   "template",
+	Short: "Display's template for type creation",
+	Long:  "fetches metadata from xldeploy for a single type and returns a json template that can be used for the creation of said type",
+	Run:   getTypeTemplate,
+}
 
 var metaOrchestratorCommand = &cobra.Command{
 	Use:   "orchestrators",
@@ -64,13 +70,18 @@ var metaPermissionsCommand = &cobra.Command{
 }
 
 var longBool bool
+var optionalBool bool
 
 func init() {
+
 	// add flags to the various previously defined commands
 	metaTypeCommand.Flags().BoolVarP(&longBool, "long", "l", false, "print long listing instead of condensed output")
+	metaTemplateCommand.Flags().BoolVarP(&optionalBool, "optional", "o", false, "include optional parameters in template")
 
 	// add the commands to da mothership
 	metaCmd.AddCommand(metaTypeCommand)
+
+	metaCmd.AddCommand(metaTemplateCommand)
 
 	metaCmd.AddCommand(metaOrchestratorCommand)
 
@@ -78,6 +89,70 @@ func init() {
 
 	RootCmd.AddCommand(metaCmd)
 
+}
+
+//Gets a list of
+func getTypeTemplate(cmd *cobra.Command, args []string) {
+	var tl goxldeploy.TypeList
+	var tmpl []map[string]interface{}
+
+	xld := GetClient()
+
+	if len(args) == 0 {
+		jww.FATAL.Printf("%s:requires at least one argument", cmd.CommandPath())
+		os.Exit(1)
+	} else {
+		for _, t := range args {
+			tt, err := xld.Metadata.GetType(t)
+			if err != nil {
+				jww.FATAL.Printf("%s: encounterd a fatal error in retrieving metadata for %s: %s", cmd.CommandPath(), t, err)
+				os.Exit(1)
+			}
+			tl = append(tl, tt)
+		}
+	}
+
+	// loop over the typelist (tl) and create a template type map[string]interface{} for each element
+	for _, t := range tl {
+		templ := make(map[string]interface{})
+
+		templ["name"] = ""
+		templ["type"] = t.Type
+
+		for _, p := range t.Properties {
+			if p.Required == true {
+				if p.Default == nil {
+					templ[p.Name] = "required"
+				} else {
+					templ[p.Name] = p.Default
+				}
+			} else {
+				if optionalBool == true {
+					templ[p.Name] = "very optional"
+				}
+			}
+		}
+		tmpl = append(tmpl, templ)
+	}
+
+	// handle the output
+	// if only one template was given then we do not want to bother our esteemd users with a slice representation
+	var o interface{}
+
+	if len(tmpl) == 1 {
+		o = tmpl[0]
+	} else {
+		o = tmpl
+	}
+
+	// Yes ... yes we do file .. thank you ..
+	if outputFile != "" {
+		WriteJSONToFile(o, outputFile)
+		os.Exit(0)
+	}
+
+	RenderJSON(o)
+	os.Exit(0)
 }
 
 func getTypeMetadata(cmd *cobra.Command, args []string) {
@@ -102,6 +177,10 @@ func getTypeMetadata(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	}
+
+	//if the templateBool is set we will need to scan the returned metadata for required properties and
+	// drop those in a map[string]Interface{}
+	// then render that as valid output
 
 	//if the longBool is false we want the short rundown of the types
 	// so we have to determine if we're dealing with a list or a single type
@@ -161,4 +240,3 @@ func getPermissionMetadata(cmd *cobra.Command, args []string) {
 
 	RenderJSON(o)
 }
-
