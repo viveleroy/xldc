@@ -83,7 +83,7 @@
   branch = "master"
   name = "github.com/viveleroy/goxldeploy"
   packages = ["."]
-  revision = "4cd3aebec7f00c9c8d4a947f3f9aa40715f4a68e"
+  revision = "679d0526c0d67c4f504d5dd0b3e8604b684b035e"
 
 [[projects]]
   branch = "master"
