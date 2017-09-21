@@ -19,3 +19,5 @@ xldc.yaml
 
 #compiled binary
 xldc
+
+vendor/*
